@@ -13,6 +13,7 @@ const allowedChats = [
   "-1001945716699",
   "470471049",
 ];
+const postChannelId = "-1001945716699";
 
 const restrictedToChat = (ctx, next) => {
   if (allowedChats.includes(ctx.chat.id.toString())) {
@@ -82,24 +83,24 @@ const postToAppsScript = async (inputString) => {
 const doPost = async () => {
   try {
     // ID канала, в который нужно опубликовать сообщение
-    const channelId = "-1001945716699";
+    const channelId = postChannelId;
     // Текст сообщения для публикации
-    const latestTwit = await readRssFeed();
-    const messageText =
-      latestTwit.items[0].title + "\n\n" + latestTwit.items[0].link;
-    const response = await postToAppsScript(
-      latestTwit.items[0].link.toString()
-    );
+    const latestTwits = await readRssFeed();
+    const latestTwit = latestTwits.items[0];
+    const messageText = latestTwit.title + "\n\n" + latestTwit.link;
+    const response = await postToAppsScript(latestTwit.link.toString());
     if (response == "Complete string match") {
       return;
-    } else {
-      if (latestTwit.items[0].content.includes("<img")) {
-        let imgs = grabImgs(latestTwit.items[0]);
+    } else if (response == latestTwit.link.toString()) {
+      if (latestTwit.content.includes("<img")) {
+        let imgs = grabImgs(latestTwit);
         let inputMedia = setMediaArr(imgs, messageText);
         bot.telegram.sendMediaGroup(channelId, inputMedia, alertMessageOptions);
       } else {
         bot.telegram.sendMessage(channelId, messageText, noAlertMessageOptions);
       }
+    } else {
+      console.log(response);
     }
   } catch (error) {
     console.log(error);
@@ -113,4 +114,3 @@ cron.schedule("* * * * *", () => {
 bot.launch();
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
