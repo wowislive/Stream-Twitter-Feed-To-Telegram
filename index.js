@@ -1,20 +1,22 @@
-const { Telegraf } = require("telegraf");
-const cron = require("node-cron");
-const axios = require("axios");
-const Parser = require("rss-parser");
+const { Telegraf } = require("telegraf"); // telegram bot library
+const cron = require("node-cron"); // library for implementing the function execution schedule
+const axios = require("axios"); // HTTP client for JavaScript
+const Parser = require("rss-parser"); //  library for turning RSS XML feeds into JavaScript objects
 require("dotenv").config();
 
 const parser = new Parser();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// ids for private chats and channels in which bot activity is allowed
 const allowedChats = [
   "-926114543",
   "-1001900174358",
   "-1001945716699",
   "470471049",
 ];
-const postChannelId = "-1001945716699";
+const postChannelId = "-1001945716699"; // ID of the channel in which publications will be made
 
+// function for middleware that will restrict the use of the bot in unspecified chats
 const restrictedToChat = (ctx, next) => {
   if (allowedChats.includes(ctx.chat.id.toString())) {
     return next();
@@ -24,8 +26,9 @@ const restrictedToChat = (ctx, next) => {
 
 bot.use(restrictedToChat);
 
-// URL RSS-ленты, которую вы хотите прочитать
+// RSS URL that you want to read
 const feedUrl = "https://nitter.net/game8_d4boss/rss";
+// objects with additional parameters for publishing posts in a channel
 const alertMessageOptions = {
   parse_mode: "HTML",
   disable_notification: false,
@@ -37,16 +40,17 @@ const noAlertMessageOptions = {
   disable_web_page_preview: true,
 };
 
-// Функция для чтения RSS-ленты и обработки полученных данных
+// function for reading RSS feed and processing the received data
 async function readRssFeed() {
   try {
     const feed = await parser.parseURL(feedUrl);
     return feed;
   } catch (err) {
-    console.log("Ошибка при чтении RSS-ленты:", err);
+    console.log("Error reading RSS feed:", err);
   }
 }
 
+// retrieves all "src" attribute values from <img> tags
 const grabImgs = (item) => {
   let match;
   let matches = [];
@@ -57,6 +61,7 @@ const grabImgs = (item) => {
   return matches;
 };
 
+// create an array with media content for a media post
 const setMediaArr = (imgs, text) => {
   let mediaArr = [];
   imgs.forEach((item) => {
@@ -69,6 +74,7 @@ const setMediaArr = (imgs, text) => {
   return mediaArr;
 };
 
+// sending post request to apps script and getting response
 const postToAppsScript = async (inputString) => {
   try {
     const scriptUrl = process.env.APPS_SCRIPT;
@@ -80,18 +86,20 @@ const postToAppsScript = async (inputString) => {
   }
 };
 
+// main function
 const doPost = async () => {
   try {
-    // ID канала, в который нужно опубликовать сообщение
     const channelId = postChannelId;
-    // Текст сообщения для публикации
     const latestTwits = await readRssFeed();
-    const latestTwit = latestTwits.items[0];
-    const messageText = latestTwit.title + "\n\n" + latestTwit.link;
+    const latestTwit = latestTwits.items[0]; // we work only with the latest tweet
+    const messageText = latestTwit.title + "\n\n" + latestTwit.link; // compose the text part of the post
     const response = await postToAppsScript(latestTwit.link.toString());
+    // getting a response "Complete string match" means that we already posted this message
     if (response == "Complete string match") {
       return;
+      // if the response contains the same url as the url of the last tweet, publish the post
     } else if (response == latestTwit.link.toString()) {
+      // if the tweet contains images, we send a media post, if not, then a text post
       if (latestTwit.content.includes("<img")) {
         let imgs = grabImgs(latestTwit);
         let inputMedia = setMediaArr(imgs, messageText);
@@ -107,6 +115,7 @@ const doPost = async () => {
   }
 };
 
+// set the function execution schedule once per minute
 cron.schedule("* * * * *", () => {
   doPost();
 });
