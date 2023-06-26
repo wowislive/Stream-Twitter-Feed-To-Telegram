@@ -18,10 +18,14 @@ const postChannelId = "-1001945716699"; // ID of the channel in which publicatio
 
 // function for middleware that will restrict the use of the bot in unspecified chats
 const restrictedToChat = (ctx, next) => {
-  if (allowedChats.includes(ctx.chat.id.toString())) {
-    return next();
+  try {
+    if (allowedChats.includes(ctx.chat.id.toString())) {
+      return next();
+    }
+    return ctx.reply("Извините, этот бот не доступен в вашем чате");
+  } catch (error) {
+    console.log(error);
   }
-  return ctx.reply("Извините, этот бот не доступен в вашем чате");
 };
 
 bot.use(restrictedToChat);
@@ -52,26 +56,34 @@ async function readRssFeed() {
 
 // retrieves all "src" attribute values from <img> tags
 const grabImgs = (item) => {
-  let match;
-  let matches = [];
-  const imgSrcRegex = /<img src="(.*?)"/g;
-  while ((match = imgSrcRegex.exec(item.content))) {
-    matches.push(match[1]);
+  try {
+    let match;
+    let matches = [];
+    const imgSrcRegex = /<img src="(.*?)"/g;
+    while ((match = imgSrcRegex.exec(item.content))) {
+      matches.push(match[1]);
+    }
+    return matches;
+  } catch (error) {
+    console.log(error);
   }
-  return matches;
 };
 
 // create an array with media content for a media post
 const setMediaArr = (imgs, text) => {
-  let mediaArr = [];
-  imgs.forEach((item) => {
-    mediaArr.push({
-      type: "photo",
-      media: item,
+  try {
+    let mediaArr = [];
+    imgs.forEach((item) => {
+      mediaArr.push({
+        type: "photo",
+        media: item,
+      });
     });
-  });
-  mediaArr[0].caption = text;
-  return mediaArr;
+    mediaArr[0].caption = text;
+    return mediaArr;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // sending post request to apps script and getting response
@@ -101,11 +113,19 @@ const doPost = async () => {
     } else if (response == latestTwit.link.toString()) {
       // if the tweet contains images, we send a media post, if not, then a text post
       if (latestTwit.content.includes("<img")) {
-        let imgs = grabImgs(latestTwit);
-        let inputMedia = setMediaArr(imgs, messageText);
-        bot.telegram.sendMediaGroup(channelId, inputMedia, alertMessageOptions);
+        let imgs = await grabImgs(latestTwit);
+        let inputMedia = await setMediaArr(imgs, messageText);
+        await bot.telegram.sendMediaGroup(
+          channelId,
+          inputMedia,
+          alertMessageOptions
+        );
       } else {
-        bot.telegram.sendMessage(channelId, messageText, noAlertMessageOptions);
+        await bot.telegram.sendMessage(
+          channelId,
+          messageText,
+          noAlertMessageOptions
+        );
       }
     } else {
       console.log(response);
@@ -117,7 +137,11 @@ const doPost = async () => {
 
 // set the function execution schedule once per minute
 cron.schedule("* * * * *", () => {
-  doPost();
+  try {
+    doPost();
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 bot.launch();
