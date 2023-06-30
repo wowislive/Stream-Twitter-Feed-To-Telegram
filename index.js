@@ -36,7 +36,7 @@ const feedUrl = "https://nitter.net/game8_d4boss/rss";
 const alertMessageOptions = {
   parse_mode: "HTML",
   disable_notification: false,
-  disable_web_page_preview: true,
+  disable_web_page_preview: false,
 };
 const noAlertMessageOptions = {
   parse_mode: "HTML",
@@ -115,11 +115,20 @@ const doPost = async () => {
       if (latestTwit.content.includes("<img")) {
         let imgs = await grabImgs(latestTwit);
         let inputMedia = await setMediaArr(imgs, messageText);
-        await bot.telegram.sendMediaGroup(
-          channelId,
-          inputMedia,
-          alertMessageOptions
-        );
+        try {
+          await bot.telegram.sendMediaGroup(
+            channelId,
+            inputMedia,
+            alertMessageOptions
+          );
+        } catch (error) {
+          console.log(error);
+          await bot.telegram.sendMessage(
+            channelId,
+            messageText,
+            alertMessageOptions
+          );
+        }
       } else {
         await bot.telegram.sendMessage(
           channelId,
