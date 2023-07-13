@@ -31,7 +31,7 @@ const restrictedToChat = (ctx, next) => {
 bot.use(restrictedToChat);
 
 // RSS URL that you want to read
-const feedUrl = "https://nitter.net/game8_d4boss/rss";
+const feedUrl = "https://ntr.nah.re/game8_d4boss/rss";
 // objects with additional parameters for publishing posts in a channel
 const alertMessageOptions = {
   parse_mode: "HTML",
@@ -123,6 +123,7 @@ const doPost = async () => {
           );
         } catch (error) {
           console.log(error);
+          // When receiving a possible error 400 (or any other) while creating a media group we post a text message
           await bot.telegram.sendMessage(
             channelId,
             messageText,
