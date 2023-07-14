@@ -36,7 +36,7 @@ const feedUrl = "https://ntr.nah.re/game8_d4boss/rss";
 const alertMessageOptions = {
   parse_mode: "HTML",
   disable_notification: false,
-  disable_web_page_preview: false,
+  disable_web_page_preview: true,
 };
 const noAlertMessageOptions = {
   parse_mode: "HTML",
@@ -59,9 +59,25 @@ const grabImgs = (item) => {
   try {
     let match;
     let matches = [];
+
+    let transformMatch; // Variables for URL transformation
+    let extension; // Variables for URL transformation
+
     const imgSrcRegex = /<img src="(.*?)"/g;
     while ((match = imgSrcRegex.exec(item.content))) {
-      matches.push(match[1]);
+      transformMatch = match[1];
+      // The instance of Nitter I'm currently using doesn't allow me to embed images from its own address, so I'm transforming these image URLs into Twitter image URLs.
+      transformMatch = transformMatch.replace(
+        "http://ntr.nah.re/pic/media%2F",
+        "http://pbs.twimg.com/media/"
+      );
+      extension = transformMatch.substr(transformMatch.lastIndexOf(".") + 1);
+      transformMatch = transformMatch.replace(
+        "." + extension,
+        "?format=" + extension
+      );
+      // end of transforming
+      matches.push(transformMatch);
     }
     return matches;
   } catch (error) {
@@ -123,6 +139,7 @@ const doPost = async () => {
           );
         } catch (error) {
           console.log(error);
+          console.log(inputMedia);
           // When receiving a possible error 400 (or any other) while creating a media group we post a text message
           await bot.telegram.sendMessage(
             channelId,
