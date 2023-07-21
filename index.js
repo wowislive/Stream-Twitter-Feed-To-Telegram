@@ -127,8 +127,12 @@ const doPost = async () => {
       return;
       // if the response contains the same url as the url of the last tweet, publish the post
     } else if (response == latestTwit.link.toString()) {
-      // if the tweet contains images, we send a media post, if not, then a text post
-      if (latestTwit.content.includes("<img")) {
+      if (latestTwit.title.includes("R to @")) {
+        // if the tweet contains "R to @", this is a reply and we don't want to repost it
+        console.log("This is a reply 0_o");
+        return;
+      } else if (latestTwit.content.includes("<img")) {
+        // if the tweet contains images, we send a media post, if not, then a text post
         let imgs = await grabImgs(latestTwit);
         let inputMedia = await setMediaArr(imgs, messageText);
         try {
