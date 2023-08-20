@@ -31,7 +31,7 @@ const restrictedToChat = (ctx, next) => {
 bot.use(restrictedToChat);
 
 // RSS URL that you want to read
-const feedUrl = "https://ntr.nah.re/game8_d4boss/with_replies/rss";
+const feedUrl = "https://nitter.privacydev.net/game8_d4boss/rss";
 // objects with additional parameters for publishing posts in a channel
 const alertMessageOptions = {
   parse_mode: "HTML",
