@@ -68,8 +68,8 @@ const grabImgs = (item) => {
       transformMatch = match[1];
       // The instance of Nitter I'm currently using doesn't allow me to embed images from its own address, so I'm transforming these image URLs into Twitter image URLs.
       transformMatch = transformMatch.replace(
-        "http://ntr.nah.re/pic/media%2F",
-        "http://pbs.twimg.com/media/"
+        "https://nitter.privacydev.net/pic/media%2F",
+        "https://pbs.twimg.com/media/"
       );
       extension = transformMatch.substr(transformMatch.lastIndexOf(".") + 1);
       transformMatch = transformMatch.replace(
